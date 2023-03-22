@@ -1,6 +1,6 @@
 FastAPI Cookiecutter
 ===================
-[![Build Status](https://github.com/sparklingtide/fastapi-cookiecutter/actions/workflows/main.yml/badge.svg)
+![Build Status](https://github.com/sparklingtide/fastapi-cookiecutter/actions/workflows/main.yaml/badge.svg)
 
 Powered by [Cookiecutter](https://github.com/audreyr/cookiecutter), Cookiecutter FastAPI is a framework for jumpstarting production-ready FastAPI projects quickly
 
