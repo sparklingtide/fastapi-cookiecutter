@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "<%= cookiecutter.project_slug | to_lower_camel %>.migrations.jobname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+    app.kubernetes.io/component: migrations
+spec:
+  template:
+    metadata:
+      labels:
+        {{- include "common.labels.standard" . | nindent 8 }}
+        app.kubernetes.io/component: migrations
+    spec:
+      restartPolicy: OnFailure
+      {{- with .Values.image.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 6 }}
+      {{- end }}
+      containers:
+      - name: migrations
+        image: {{ include "<%= cookiecutter.project_slug | to_lower_camel %>.image" . }}
+        imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+        command: [ "alembic", "upgrade", "head" ]
+        env: {{- include "<%= cookiecutter.project_slug | to_lower_camel %>.env" . | nindent 10 }}
+        {{- with .Values.migrations.resources }}
+        resources: {{- toYaml . | nindent 12 }}
+        {{- end }}

@@ -1,0 +1,7 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "{{ cookiecutter.project_slug }}"
+    schedule:
+      interval: "weekly"
+    versioning-strategy: "increase"

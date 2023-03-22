@@ -1,0 +1,49 @@
+version: "3"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: local.Dockerfile
+      args:
+        VARIANT: "3.11"
+        USER_UID: 1000
+        USER_GID: 1000
+
+    volumes:
+      - .:/workspace:cached
+      - ~/.kube/config:/home/vscode/.kube/config
+      - ~/.config/yandex-cloud:/home/vscode/.config/yandex-cloud
+
+    # Overrides default command so things don't shut down after the process ends.
+    command: sleep infinity
+
+    user: vscode
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DATABASE: app
+      POSTGRES_TEST_DATABASE: app_test
+
+      PRE_COMMIT_HOME: "/workspace/.cache/pre-commit"
+      # variables to login w/o credentials into postgres
+      PGDATABASE: app
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: postgres
+
+  postgres:
+    image: postgres:15.2
+    restart: always
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: app
+      POSTGRES_PASSWORD: postgres
+
+volumes:
+  postgres-data:

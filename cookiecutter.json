@@ -1,0 +1,12 @@
+{
+  "project_name": "My Awesome Project",
+  "project_slug": "{{ cookiecutter.project_name | slugify(separator='_') }}",
+  "kubecontext": "sparkling-tide/sparklingtide-k3s:k3s",
+  "sops_pgp_key": "A6A0 C248 6634 0D4F C12C  566B F2D6 78D2 4440 47BB",
+  "_copy_without_render": [
+    ".helm/templates"
+  ],
+  "_extensions": [
+    "jinja2_extensions.StrcaseExtension"
+  ]
+}

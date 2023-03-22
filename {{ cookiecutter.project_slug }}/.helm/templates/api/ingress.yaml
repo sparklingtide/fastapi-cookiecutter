@@ -1,0 +1,32 @@
+{{- if .Values.api.ingress.enabled -}}
+apiVersion: {{ include "common.capabilities.ingress.apiVersion" . }}
+kind: Ingress
+metadata:
+  name: {{ include "common.names.fullname" . }}-api
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+    app.kubernetes.io/component: api
+  namespace: {{ .Release.Namespace }}
+  {{- with .Values.api.ingress.annotations }}
+  annotations: {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if and .Values.api.ingress.ingressClassName (eq "true" (include "common.ingress.supportsIngressClassname" .)) }}
+  ingressClassName: {{ .Values.api.ingress.ingressClassName }}
+  {{- end }}
+  {{- if .Values.api.ingress.tls }}
+  tls:
+    - hosts:
+        - {{ .Values.api.ingress.hostname }}
+      secretName: {{ printf "%s-tls" .Values.api.ingress.hostname }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.api.ingress.hostname }}
+      http:
+        paths:
+          - path: {{ .Values.api.ingress.path }}
+            {{- if eq "true" (include "common.ingress.supportsPathType" .) }}
+            pathType: Prefix
+            {{- end }}
+            backend: {{- include "common.ingress.backend" (dict "serviceName" (printf "%s-api" (include "common.names.fullname" .)) "servicePort" "http" "context" $)  | nindent 14 }}
+{{- end -}}

@@ -1,0 +1,123 @@
+image:
+  repository: ""
+  tag: "latest"
+  pullPolicy: IfNotPresent
+  # pullPolicy: Always
+  imagePullSecrets:
+    - name: {{ cookiecutter.project_slug | slugify }}-pullsecret
+
+externalDatabase:
+  host: ""
+  port: 5432
+  user: ""
+  existingSecret: ""
+  existingSecretPasswordKey: ""
+  password: ""
+  database: ""
+
+api:
+  replicaCount: 1
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  affinity: {}
+
+  ## Node labels for pod assignment (this value is evaluated as a template)
+  ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+  nodeSelector: {}
+
+  ## Tolerations for pod assignment (this value is evaluated as a template)
+  ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#taints-and-tolerations-beta-feature
+  tolerations: []
+
+  ## Additional labels for the pod(s).
+  podLabels: {}
+    # monitoring.prometheus: java.spring.boot
+
+  ## Pod priority class name
+  priorityClassName: ""
+
+  podSecurityContext: {}
+    # fsGroup: 1000
+    # runAsUser: 1000
+    # runAsNonRoot: true
+
+  securityContext: {}
+
+  resources: {}
+
+  # Probes
+  startupProbe:
+    enabled: false
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 1
+    failureThreshold: 3
+    successThreshold: 1
+
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 1
+    failureThreshold: 3
+    successThreshold: 1
+
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 1
+    failureThreshold: 3
+    successThreshold: 1
+
+  # Network
+  containerPort: 8000
+
+  service:
+    type: ClusterIP
+    port: 8000
+
+  ingress:
+    enabled: true
+    ingressClassName: ""
+    hostname: ""
+    tls: false
+    path: /api
+    annotations: {}
+      # cert-manager.io/cluster-issuer: letsencrypt-production
+
+migrations:
+  resources: {}
+
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "postgres"
+    username: app
+    password: app
+    database: app
+  primary:
+    persistence:
+      size: 1Gi
+
+redis:
+  enabled: true
+  architecture: standalone
+  image:
+    tag: 7.0.10
+  auth:
+    enabled: false
+  master:
+    persistence:
+      enabled: false
+
+pullSecret:
+  registry: ""
+  username: ""

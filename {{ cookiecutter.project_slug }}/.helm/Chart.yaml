@@ -1,0 +1,13 @@
+apiVersion: v2
+name: {{ cookiecutter.project_slug | slugify }}
+description: A Helm chart for Kubernetes
+type: application
+version: 0.1.0
+dependencies:
+- name: common
+  version: 1.x.x
+  repository: https://charts.bitnami.com/bitnami
+- name: postgresql
+  version: 12.2.5
+  repository: https://charts.bitnami.com/bitnami
+  condition: postgresql.enabled

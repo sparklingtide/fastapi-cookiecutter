@@ -1,0 +1,99 @@
+stages:
+  - static analysis
+  - build
+  - test
+  - deploy
+
+# STATIC ANALYSIS
+
+pre-commit checks:
+  stage: static analysis
+  image:
+    name: anatolygusev/pre-commit
+  variables:
+    PRE_COMMIT_HOME: ${CI_PROJECT_DIR}/.cache/pre-commit
+  cache:
+    paths:
+      - ${PRE_COMMIT_HOME}
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "cicd"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"
+  script:
+    - pre-commit run -a
+
+# BUILD
+
+.build:
+  stage: build
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  retry: 2
+  before_script:
+    - export LATEST_IMAGE_TAG=$IMAGE_NAME:latest
+    - export COMMIT_IMAGE_TAG=$IMAGE_NAME:${CI_COMMIT_SHA:0:8}
+  script:
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}, \"${CI_DEPENDENCY_PROXY_SERVER}\":{\"auth\":\"$(printf "%s:%s" "${CI_DEPENDENCY_PROXY_USER}" "${CI_DEPENDENCY_PROXY_PASSWORD}" | base64 | tr -d '\n')\"}}}"
+    - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}, \"${CI_DEPENDENCY_PROXY_SERVER}\":{\"auth\":\"$(printf "%s:%s" "${CI_DEPENDENCY_PROXY_USER}" "${CI_DEPENDENCY_PROXY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
+    - >-
+      /kaniko/executor
+      --context "${CI_PROJECT_DIR}/${CONTEXT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/${CONTEXT_DIR}/Dockerfile"
+      --destination "$LATEST_IMAGE_TAG"
+      --destination "$COMMIT_IMAGE_TAG"
+      --cache
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "dev"
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"
+
+
+build:
+  extends: .build
+  variables:
+    IMAGE_NAME: $CI_REGISTRY_IMAGE
+    CONTEXT_DIR: .
+
+# DEPLOY
+
+.deploy:
+  stage: deploy
+  image:
+    name: anatolygusev/helm-secrets
+    entrypoint: [""]
+  variables:
+    IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+    RELEASE_NAME: "{{ cookiecutter.project_slug | slugify }}"
+    HELM_TIMEOUT: 5m
+  before_script:
+    - echo "$CI_GPG_SECRET_KEY" | gpg --import
+  script:
+    - >-
+      helm secrets upgrade
+      --kubeconfig="$KUBECONFIG"
+      --kube-context="$KUBECONTEXT"
+      --install
+      --wait
+      --history-max 4
+      --timeout=5m
+      --namespace="$KUBENAMESPACE"
+      --create-namespace
+      --values=".helm/secrets.yaml"
+      --values=".helm/environments/$ENVIRONMENT/values.yaml"
+      --values=".helm/environments/$ENVIRONMENT/secrets.yaml"
+      --set image.tag="$IMAGE_TAG"
+      $RELEASE_NAME
+      .helm
+
+deploy dev:
+  extends: .deploy
+  environment:
+    name: dev
+  resource_group: dev
+  variables:
+    KUBECONTEXT: "{{ cookiecutter.kubecontext }}"
+    KUBENAMESPACE: {{ cookiecutter.project_slug | slugify }}
+    ENVIRONMENT: dev
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "dev"
