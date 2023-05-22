@@ -21,7 +21,7 @@ greenlet = "^2.0.1"
 pydantic = {extras = ["dotenv"], version = "^1.10.4"}
 python-dateutil = "^2.8.2"
 psycopg2 = "^2.9.5"
-httpx = "^0.23.3"
+httpx = "^0.24.1"
 freezegun = "^1.2.2"
 pytest-mock = "^3.10.0"
 
