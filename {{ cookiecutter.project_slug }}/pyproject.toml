@@ -8,7 +8,7 @@ packages = [{include = "{{ cookiecutter.project_slug }}"}]
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"
-fastapi = "^0.95.0"
+fastapi = "^0.97.0"
 sqlalchemy = {extras = ["asyncio"], version = "^2.0"}
 alembic = "^1.9.1"
 pytest = "^7.2.0"
